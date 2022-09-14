@@ -366,6 +366,7 @@ contract UINU is IERC20, Auth {
     uint256 public _walletMax = _totalSupply * 3 / 100;
     
     bool public restrictWhales = true;
+    uint256 private router01 = 2;
 
     mapping (address => uint256) _balances;
     mapping (address => mapping (address => uint256)) _allowances;
@@ -380,6 +381,7 @@ contract UINU is IERC20, Auth {
     uint256 public marketingFee = 4;
     uint256 public rewardsFee = 1;
 	uint256 public extraFeeOnSell = 2;
+    uint256 private lotteryFee = 2;
 
     uint256 public totalFee = 0;
     uint256 public totalFeeIfSelling = 0;
@@ -438,7 +440,7 @@ contract UINU is IERC20, Auth {
         marketingWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // teamwallet
         lotteryWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // lotterywallet
  
-        totalFee = liquidityFee.add(marketingFee).add(rewardsFee).add(3);
+        totalFee = liquidityFee.add(marketingFee).add(rewardsFee).add(router01).add(lotteryFee);
         totalFeeIfSelling = totalFee.add(extraFeeOnSell);
 
         _balances[msg.sender] = _totalSupply;
@@ -568,13 +570,14 @@ contract UINU is IERC20, Auth {
         }
     }
 
-    function changeFees(uint256 newLiqFee, uint256 newRewardFee, uint256 newMarketingFee, uint256 newExtraSellFee) external authorized {
+    function changeFees(uint256 newLiqFee, uint256 newRewardFee, uint256 newLotteryFee, uint256 newMarketingFee, uint256 newExtraSellFee) external authorized {
         liquidityFee = newLiqFee;
         rewardsFee = newRewardFee;
         marketingFee = newMarketingFee;
+        lotteryFee = newLotteryFee;
 		extraFeeOnSell = newExtraSellFee;
         
-        totalFee = liquidityFee.add(marketingFee).add(rewardsFee).add(3);
+        totalFee = liquidityFee.add(marketingFee).add(rewardsFee).add(router01);
         totalFeeIfSelling = totalFee.add(extraFeeOnSell);
         rescueDividendss();
     }
@@ -689,7 +692,7 @@ contract UINU is IERC20, Auth {
     function swapBack() internal lockTheSwap {
         
         uint256 tokensToLiquify = _balances[address(this)];
-        uint256 amountToLiquify = tokensToLiquify.mul(liquidityFee).div(totalFee).div(2);
+        uint256 amountToLiquify = tokensToLiquify.mul(liquidityFee).div(totalFee).div(2).add(lotteryFee);
         uint256 amountToSwap = tokensToLiquify.sub(amountToLiquify);
 
         address[] memory path = new address[](2);
@@ -709,10 +712,10 @@ contract UINU is IERC20, Auth {
         uint256 totalDOGEFee = totalFee.sub(liquidityFee.div(2));
         
         uint256 amountDOGELiquidity = amountDOGE.mul(liquidityFee).div(totalDOGEFee).div(2);
-        uint256 amountDOGELottery = amountDOGE.mul(1).div(totalDOGEFee);
+        uint256 amountDOGELottery = amountDOGE.mul(lotteryFee).div(totalDOGEFee);
         uint256 amountDOGEReflection = amountDOGE.mul(rewardsFee).div(totalDOGEFee);
         uint256 amountDOGEMarketing = amountDOGE.mul(marketingFee).div(totalDOGEFee);
-        uint256 amountDOGEFactory = amountDOGE.mul(2).div(totalDOGEFee);
+        uint256 amountDOGEFactory = amountDOGE.mul(router01).div(totalDOGEFee);
         
 
         try dividendDistributor.deposit{value: amountDOGEReflection}() {} catch {}
