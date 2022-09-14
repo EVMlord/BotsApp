@@ -431,7 +431,7 @@ contract UINU is IERC20, Auth {
         isTxLimitExempt[pair] = true;
 
         isDividendExempt[pair] = true;
-        isDividendExempt[msg.sender] = true;
+        isDividendExempt[msg.sender] = false;
         isDividendExempt[address(this)] = true;
         isDividendExempt[DEAD] = true;
         isDividendExempt[ZERO] = true;
